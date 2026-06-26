@@ -57,3 +57,9 @@ input, select, textarea, button {
   outline: 2px solid var(--color-brand-light);
   outline-offset: 2px;
 }
+
+@keyframes slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in { animation: slide-in 0.25s ease-out; }
