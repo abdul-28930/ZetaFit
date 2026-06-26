@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  const org = profile?.organizations as { name: string; platform_plan: string } | null
+  const org = profile?.organizations as unknown as { name: string; platform_plan: string } | null
 
   // Fetch KPIs
   const { data: kpis } = await supabase

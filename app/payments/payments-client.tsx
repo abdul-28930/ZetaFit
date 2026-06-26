@@ -19,7 +19,7 @@ interface Payment {
   invoice_number: string | null
   paid_at: string | null
   created_at: string
-  members: MemberRef | null
+  members: any
 }
 
 interface Props {

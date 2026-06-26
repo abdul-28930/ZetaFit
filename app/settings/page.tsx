@@ -16,7 +16,7 @@ export default async function SettingsPage() {
     .eq('id', user.id)
     .single()
 
-  const org = profile?.organizations as Record<string, any> | null
+  const org = profile?.organizations as unknown as Record<string, any> | null
   console.log('[Settings] Org:', org?.name)
 
   return (

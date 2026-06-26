@@ -19,8 +19,8 @@ interface GrowthPoint {
 interface ExpiringMember {
   id: string
   end_date: string
-  members: { id: string; full_name: string; phone: string } | null
-  membership_plans: { name: string } | null
+  members: any
+  membership_plans: any
 }
 
 interface Props {

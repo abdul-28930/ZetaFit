@@ -11,7 +11,7 @@ interface CheckIn {
   checked_in_at: string
   result: string
   method: string
-  members: { id: string; full_name: string; initials: string } | null
+  members: any
 }
 
 interface CheckInResult {

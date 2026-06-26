@@ -16,7 +16,7 @@ export default async function PaymentsPage() {
     .eq('id', user.id)
     .single()
 
-  const org = profile?.organizations as { name: string; platform_plan: string } | null
+  const org = profile?.organizations as unknown as { name: string; platform_plan: string } | null
 
   const [{ data: payments }, { data: members }] = await Promise.all([
     supabase.from('payments').select(`id, amount, gst_amount, total_amount, payment_method, payment_status, invoice_number, paid_at, created_at, members(id, full_name, initials)`).order('created_at', { ascending: false }),
@@ -34,7 +34,7 @@ export default async function PaymentsPage() {
   return (
     <div className="flex min-h-screen">
       <Sidebar gymName={org?.name} orgPlan={org?.platform_plan} />
-      <PaymentsClient payments={payments ?? []} members={members ?? []} collectedThisMonth={collectedThisMonth} pendingDues={pendingDues} />
+      <PaymentsClient payments={(payments ?? []) as unknown as any[]} members={members ?? []} collectedThisMonth={collectedThisMonth} pendingDues={pendingDues} />
     </div>
   )
 }

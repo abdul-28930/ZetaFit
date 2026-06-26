@@ -16,7 +16,7 @@ export default async function AttendancePage() {
     .eq('id', user.id)
     .single()
 
-  const org = profile?.organizations as { name: string; platform_plan: string } | null
+  const org = profile?.organizations as unknown as { name: string; platform_plan: string } | null
 
   // Today's check-ins
   const todayStart = new Date()
@@ -36,7 +36,7 @@ export default async function AttendancePage() {
   return (
     <div className="flex min-h-screen">
       <Sidebar gymName={org?.name} orgPlan={org?.platform_plan} />
-      <AttendanceClient todayCheckIns={todayCheckIns ?? []} />
+      <AttendanceClient todayCheckIns={(todayCheckIns ?? []) as unknown as any[]} />
     </div>
   )
 }

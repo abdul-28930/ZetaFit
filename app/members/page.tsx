@@ -16,7 +16,7 @@ export default async function MembersPage() {
     .eq('id', user.id)
     .single()
 
-  const org = profile?.organizations as { name: string; platform_plan: string } | null
+  const org = profile?.organizations as unknown as { name: string; platform_plan: string } | null
 
   const [{ data: members }, { data: plans }] = await Promise.all([
     supabase.from('members_with_subscription').select('*').order('created_at', { ascending: false }),

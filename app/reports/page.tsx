@@ -16,7 +16,7 @@ export default async function ReportsPage() {
     .eq('id', user.id)
     .single()
 
-  const org = profile?.organizations as { name: string; platform_plan: string } | null
+  const org = profile?.organizations as unknown as { name: string; platform_plan: string } | null
 
   // ── Plan distribution — count from member_subscriptions directly ──────────
   const { data: plans } = await supabase
@@ -119,7 +119,7 @@ export default async function ReportsPage() {
         totalAllTime={totalAllTime}
         totalCheckInsThisMonth={totalCheckInsThisMonth}
         monthlyGrowth={monthlyGrowth}
-        expiringMembers={expiringMembers ?? []}
+        expiringMembers={(expiringMembers ?? []) as unknown as any[]}
         gymName={org?.name ?? 'Your Gym'}
       />
     </div>
