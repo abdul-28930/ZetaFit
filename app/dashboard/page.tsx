@@ -5,7 +5,7 @@ import RemindButton from './remind-button'
 import DashboardChart from './dashboard-chart'
 import {
   Users, CalendarCheck, Clock, IndianRupee,
-  TrendingUp, TrendingDown,
+  TrendingUp, TrendingDown, UserPlus
 } from 'lucide-react'
 
 export default async function DashboardPage() {
@@ -150,8 +150,8 @@ export default async function DashboardPage() {
               Welcome back, {profile?.full_name ?? 'Owner'} · {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
-          <a href="/members" className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover">
-            <Users className="h-4 w-4" /> + Add member
+          <a href="/members?add=1" className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover">
+            <UserPlus className="h-4 w-4" /> Add member
           </a>
         </div>
 

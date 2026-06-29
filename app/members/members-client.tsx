@@ -1,4 +1,5 @@
 'use client'
+import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { Plus, Search, X, Phone, Users, MoreVertical, CalendarCheck, RefreshCw, Pencil, Bell, CheckSquare, Square } from 'lucide-react'
 import MemberDrawer from './member-drawer'
@@ -102,7 +103,7 @@ export default function MembersClient({ members: initialMembers, plans }: Props)
   const [members, setMembers] = useState<Member[]>(initialMembers)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [showModal, setShowModal] = useState(false)
+  const [showModal, setShowModal] = useState(searchParams.get('add') === '1')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
@@ -116,6 +117,9 @@ export default function MembersClient({ members: initialMembers, plans }: Props)
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'upi' | 'card'>('cash')
   const [amountPaid, setAmountPaid] = useState('')
   const selectedPlan = plans.find(p => p.id === planId)
+
+  const searchParams = useSearchParams()
+  const [showModal, setShowModal] = useState(searchParams.get('add') === '1')
 
   function resetForm() {
     setFullName(''); setPhone(''); setEmail('')
