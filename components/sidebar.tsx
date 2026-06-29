@@ -8,43 +8,6 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-const NAV_GROUPS = [
-  {
-    label: 'Overview',
-    items: [
-      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: 'Members',
-    items: [
-      { href: '/members', label: 'All members', icon: Users },
-      { href: '/members?filter=expiring', label: 'Expiring soon', icon: Clock, badge: 'expiring' },
-    ],
-  },
-  {
-    label: 'Finance',
-    items: [
-      { href: '/plans', label: 'Plans & pricing', icon: CreditCard },
-      { href: '/payments', label: 'Payments', icon: Banknote },
-    ],
-  },
-  {
-    label: 'Operations',
-    items: [
-      { href: '/attendance', label: 'Attendance', icon: CalendarCheck },
-      { href: '/workouts', label: 'Workouts', icon: Dumbbell },
-    ],
-  },
-  {
-    label: 'Insights',
-    items: [
-      { href: '/reports', label: 'Reports', icon: BarChart3 },
-      { href: '/settings', label: 'Settings', icon: Settings },
-    ],
-  },
-]
-
 interface SidebarProps {
   gymName?: string
   orgPlan?: string
@@ -52,6 +15,43 @@ interface SidebarProps {
   trialEndsAt?: string | null
   expiringCount?: number
 }
+
+const NAV_GROUPS = [
+  {
+    label: 'Overview',
+    items: [
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: null },
+    ],
+  },
+  {
+    label: 'Members',
+    items: [
+      { href: '/members', label: 'All members', icon: Users, badge: null },
+      { href: '/members?filter=expiring', label: 'Expiring soon', icon: Clock, badge: 'expiring' },
+    ],
+  },
+  {
+    label: 'Finance',
+    items: [
+      { href: '/plans', label: 'Plans & pricing', icon: CreditCard, badge: null },
+      { href: '/payments', label: 'Payments', icon: Banknote, badge: null },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { href: '/attendance', label: 'Attendance', icon: CalendarCheck, badge: null },
+      { href: '/workouts', label: 'Workouts', icon: Dumbbell, badge: null },
+    ],
+  },
+  {
+    label: 'Insights',
+    items: [
+      { href: '/reports', label: 'Reports', icon: BarChart3, badge: null },
+      { href: '/settings', label: 'Settings', icon: Settings, badge: null },
+    ],
+  },
+]
 
 export default function Sidebar({ gymName = 'Your Gym', orgPlan = 'starter', orgStatus = 'trial', trialEndsAt = null, expiringCount = 0 }: SidebarProps) {
   const pathname = usePathname()
@@ -63,6 +63,15 @@ export default function Sidebar({ gymName = 'Your Gym', orgPlan = 'starter', org
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
+  }
+
+  function isActive(href: string) {
+    const base = href.split('?')[0]
+    if (href.includes('?filter=expiring')) {
+      return pathname === '/members' && typeof window !== 'undefined' && window.location.search.includes('filter=expiring')
+    }
+    if (base === '/members') return pathname === '/members' && (typeof window === 'undefined' || !window.location.search.includes('filter=expiring'))
+    return pathname === base || (base !== '/dashboard' && pathname.startsWith(base + '/'))
   }
 
   return (
@@ -84,7 +93,7 @@ export default function Sidebar({ gymName = 'Your Gym', orgPlan = 'starter', org
         </div>
       </div>
 
-      {/* Grouped nav */}
+      {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
         {NAV_GROUPS.map(group => (
           <div key={group.label}>
@@ -93,20 +102,14 @@ export default function Sidebar({ gymName = 'Your Gym', orgPlan = 'starter', org
             </p>
             <div className="space-y-0.5">
               {group.items.map(({ href, label, icon: Icon, badge }) => {
-                const isActive = pathname === href || (href !== '/members?filter=expiring' && pathname.startsWith(href.split('?')[0] + '/'))
+                const active = isActive(href)
                 const badgeCount = badge === 'expiring' ? expiringCount : 0
-
                 return (
-                  <Link
-                    key={href}
-                    href={href}
+                  <Link key={href} href={href}
                     className={`flex h-8 items-center gap-2.5 rounded-lg px-3 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-brand-muted text-brand'
-                        : 'text-ink-secondary hover:bg-bg-page hover:text-ink'
-                    }`}
-                  >
-                    <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-brand' : 'text-ink-muted'}`} />
+                      active ? 'bg-brand-muted text-brand' : 'text-ink-secondary hover:bg-bg-page hover:text-ink'
+                    }`}>
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-brand' : 'text-ink-muted'}`} />
                     <span className="flex-1 truncate">{label}</span>
                     {badgeCount > 0 && (
                       <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
@@ -130,17 +133,11 @@ export default function Sidebar({ gymName = 'Your Gym', orgPlan = 'starter', org
               Renews {new Date(trialEndsAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
             </span>
           )}
-          {orgStatus === 'active' && (
-            <span className="text-[10px] text-green-600 font-medium">Active</span>
-          )}
-          {orgStatus === 'trial' && !trialEndsAt && (
-            <span className="text-[10px] text-amber-600">Trial</span>
-          )}
+          {orgStatus === 'active' && <span className="text-[10px] text-green-600 font-medium">Active</span>}
+          {orgStatus === 'trial' && !trialEndsAt && <span className="text-[10px] text-amber-600">Trial</span>}
         </div>
-        <button
-          onClick={handleSignOut}
-          className="flex h-8 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-secondary hover:bg-red-50 hover:text-red-600 transition-colors"
-        >
+        <button onClick={handleSignOut}
+          className="flex h-8 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-secondary hover:bg-red-50 hover:text-red-600 transition-colors">
           <LogOut className="h-3.5 w-3.5 shrink-0" />
           Sign out
         </button>
