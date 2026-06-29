@@ -5,7 +5,7 @@ import RemindButton from './remind-button'
 import DashboardChart from './dashboard-chart'
 import {
   Users, CalendarCheck, Clock, IndianRupee,
-  TrendingUp, TrendingDown, UserPlus
+  TrendingUp, TrendingDown, UserPlus,
 } from 'lucide-react'
 
 export default async function DashboardPage() {
@@ -23,7 +23,6 @@ export default async function DashboardPage() {
 
   const { data: kpis } = await supabase.from('org_dashboard_kpis').select('*').single()
 
-  // Previous month KPIs for deltas
   const now = new Date()
   const firstThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const firstLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
@@ -39,22 +38,26 @@ export default async function DashboardPage() {
     supabase.from('members').select('id').is('deleted_at', null).gte('created_at', firstThisMonth),
     supabase.from('members').select('id').is('deleted_at', null).gte('created_at', firstLastMonth).lt('created_at', firstThisMonth),
     supabase.from('payments').select('total_amount').eq('payment_status', 'paid').gte('paid_at', firstLastMonth).lt('paid_at', firstThisMonth),
-    supabase.from('member_subscriptions').select('id, end_date, members(id, full_name, phone), membership_plans(name)')
+    supabase.from('member_subscriptions')
+      .select('id, end_date, members(id, full_name, phone), membership_plans(name)')
       .gte('end_date', now.toISOString().split('T')[0])
       .lte('end_date', new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0])
-      .eq('status', 'active').order('end_date'),
-    supabase.from('attendance').select('id, checked_in_at, result, method, members(id, full_name, initials)').order('checked_in_at', { ascending: false }).limit(6),
-    // Last 6 months revenue for chart
+      .eq('status', 'active')
+      .order('end_date'),
+    supabase.from('attendance')
+      .select('id, checked_in_at, result, method, members(id, full_name, initials)')
+      .order('checked_in_at', { ascending: false })
+      .limit(6),
     supabase.from('payments').select('total_amount, paid_at, created_at').eq('payment_status', 'paid'),
   ])
 
   const newThisMonth = newMembersThisMonth?.length ?? 0
-  const newLastMonth = newMembersLastMonth?.length ?? 0
   const revenueLastMonth = (revenueLastMonthData ?? []).reduce((s: number, p: any) => s + (p.total_amount ?? 0), 0)
   const revThisMonth = kpis?.revenue_this_month ?? 0
   const revDelta = revenueLastMonth > 0 ? Math.round(((revThisMonth - revenueLastMonth) / revenueLastMonth) * 100) : null
+  const expiringCount = expiringData?.length ?? 0
 
-  // Build 6-month chart data
+  // 6-month chart data
   const chartData = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
     const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
@@ -93,45 +96,29 @@ export default async function DashboardPage() {
     return 'text-yellow-600'
   }
 
-  const expiringCount = expiringData?.length ?? 0
-
   const stats = [
     {
-      label: 'Active members',
-      value: (kpis?.active_members ?? 0).toLocaleString('en-IN'),
-      icon: Users,
-      iconBg: 'bg-brand-muted',
-      iconColor: 'text-brand',
-      delta: newThisMonth > 0 ? `+${newThisMonth} this month` : null,
-      deltaColor: 'text-green-600',
-      deltaIcon: TrendingUp,
+      label: 'Active members', value: (kpis?.active_members ?? 0).toLocaleString('en-IN'),
+      icon: Users, iconBg: 'bg-brand-muted', iconColor: 'text-brand',
+      delta: newThisMonth > 0 ? `+${newThisMonth} this month` : 'No new members',
+      deltaColor: newThisMonth > 0 ? 'text-green-600' : 'text-ink-muted',
+      deltaIcon: newThisMonth > 0 ? TrendingUp : null,
     },
     {
-      label: 'Check-ins today',
-      value: (kpis?.checkins_today ?? 0).toLocaleString('en-IN'),
-      icon: CalendarCheck,
-      iconBg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      delta: 'Updating live',
-      deltaColor: 'text-green-500',
-      deltaIcon: null,
+      label: 'Check-ins today', value: (kpis?.checkins_today ?? 0).toLocaleString('en-IN'),
+      icon: CalendarCheck, iconBg: 'bg-blue-50', iconColor: 'text-blue-600',
+      delta: 'Updating live', deltaColor: 'text-green-500', deltaIcon: null,
     },
     {
-      label: 'Expiring in 7 days',
-      value: (kpis?.expiring_in_7_days ?? 0).toLocaleString('en-IN'),
-      icon: Clock,
-      iconBg: 'bg-yellow-50',
-      iconColor: 'text-yellow-600',
+      label: 'Expiring in 7 days', value: expiringCount.toLocaleString('en-IN'),
+      icon: Clock, iconBg: 'bg-yellow-50', iconColor: 'text-yellow-600',
       delta: expiringCount > 0 ? `${expiringCount} need renewal` : 'All good',
       deltaColor: expiringCount > 0 ? 'text-orange-500' : 'text-green-600',
       deltaIcon: expiringCount > 0 ? TrendingDown : null,
     },
     {
-      label: 'Revenue this month',
-      value: formatINR(revThisMonth),
-      icon: IndianRupee,
-      iconBg: 'bg-green-50',
-      iconColor: 'text-green-600',
+      label: 'Revenue this month', value: formatINR(revThisMonth),
+      icon: IndianRupee, iconBg: 'bg-green-50', iconColor: 'text-green-600',
       delta: revDelta !== null ? `${revDelta >= 0 ? '+' : ''}${revDelta}% vs last month` : 'No data last month',
       deltaColor: revDelta !== null && revDelta >= 0 ? 'text-green-600' : 'text-red-500',
       deltaIcon: revDelta !== null ? (revDelta >= 0 ? TrendingUp : TrendingDown) : null,
@@ -150,7 +137,8 @@ export default async function DashboardPage() {
               Welcome back, {profile?.full_name ?? 'Owner'} · {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
-          <a href="/members?add=1" className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover">
+          <a href="/members?add=1"
+            className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover">
             <UserPlus className="h-4 w-4" /> Add member
           </a>
         </div>
@@ -183,14 +171,14 @@ export default async function DashboardPage() {
 
         {/* Bottom row */}
         <div className="grid gap-4 lg:grid-cols-2">
-          {/* Expiring */}
+          {/* Expiring this week */}
           <div className="rounded-xl border border-border bg-bg-card shadow-sm overflow-hidden">
             <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-yellow-500" />
                 <span className="text-sm font-semibold text-ink">Expiring this week</span>
               </div>
-              <a href="/members" className="text-xs font-medium text-brand hover:underline">View all</a>
+              <a href="/members?filter=expiring" className="text-xs font-medium text-brand hover:underline">View all</a>
             </div>
             {!expiringData || expiringData.length === 0 ? (
               <div className="px-5 py-8 text-center text-sm text-ink-muted">No members expiring this week 🎉</div>
@@ -203,7 +191,9 @@ export default async function DashboardPage() {
                       <p className="text-xs text-ink-muted">{sub.membership_plans?.name} · {sub.members?.phone}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-sm ${daysColor(sub.end_date)}`}>{daysLabel(sub.end_date)}</span>
+                      <span className={`text-sm whitespace-nowrap ${daysColor(sub.end_date)}`}>
+                        {daysLabel(sub.end_date)}
+                      </span>
                       <RemindButton phone={sub.members?.phone ?? ''} name={sub.members?.full_name ?? ''} />
                     </div>
                   </li>
@@ -237,7 +227,7 @@ export default async function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm font-medium text-ink">{c.members?.full_name ?? 'Unknown'}</p>
-                      <p className="text-xs text-ink-muted capitalize">{c.method === 'qr' ? 'QR scan' : 'Phone'}</p>
+                      <p className="text-xs text-ink-muted capitalize">{c.method === 'qr' ? 'QR scan' : 'Manual'}</p>
                     </div>
                     <div className="flex flex-col items-end gap-0.5">
                       <span className="text-xs text-ink-muted">{timeAgo(c.checked_in_at)}</span>

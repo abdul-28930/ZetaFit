@@ -13,8 +13,6 @@ export default function RemindButton({ phone, name }: Props) {
   async function handleRemind() {
     setState('loading')
     try {
-      // When WhatsApp is live this will call the actual API
-      // For now we simulate the queue
       await new Promise(r => setTimeout(r, 800))
       console.log('[Remind] Queued reminder for:', name, phone)
       setState('sent')
@@ -26,7 +24,7 @@ export default function RemindButton({ phone, name }: Props) {
 
   if (state === 'sent') {
     return (
-      <span className="flex items-center gap-1 rounded-lg bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+      <span className="w-20 flex items-center justify-center gap-1 rounded-lg bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
         <Check className="h-3 w-3" /> Sent
       </span>
     )
@@ -36,7 +34,7 @@ export default function RemindButton({ phone, name }: Props) {
     <button
       onClick={handleRemind}
       disabled={state === 'loading'}
-      className="flex items-center gap-1 rounded-lg border border-border bg-bg-card px-2.5 py-1 text-xs font-medium text-ink-secondary hover:border-brand hover:text-brand transition-colors disabled:opacity-60"
+      className="w-20 flex items-center justify-center gap-1 rounded-lg border border-border bg-bg-card px-2.5 py-1 text-xs font-medium text-ink-secondary hover:border-brand hover:text-brand transition-colors disabled:opacity-60"
     >
       {state === 'loading'
         ? <Loader2 className="h-3 w-3 animate-spin" />
