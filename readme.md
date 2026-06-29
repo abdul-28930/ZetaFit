@@ -249,3 +249,4 @@ Coming in Phase 7 (WhatsApp integration). The frontend works standalone — Fast
 ## License
 
 Private — © 2026 ZetaLabs. All rights reserved.
+End
