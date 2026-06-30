@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Plus, X, IndianRupee, Clock, ExternalLink } from 'lucide-react'
+import { Plus, X, IndianRupee, Clock, ExternalLink, Loader2 } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface MemberRef {
@@ -17,6 +17,7 @@ interface Payment {
   payment_method: string
   payment_status: string
   invoice_number: string | null
+  invoice_pdf_url: string | null
   paid_at: string | null
   created_at: string
   members: any
@@ -59,6 +60,33 @@ function formatINR(amount: number) {
 }
 
 type TabFilter = 'all' | 'paid' | 'pending'
+
+// ── Invoice download / status pill ───────────────────────────────────────────
+function InvoiceAction({ payment }: { payment: Payment }) {
+  if (payment.invoice_pdf_url) {
+    return (
+      <a
+        href={payment.invoice_pdf_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Download invoice"
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-muted hover:text-brand hover:bg-brand-muted"
+      >
+        <ExternalLink className="h-3.5 w-3.5" />
+      </a>
+    )
+  }
+  if (payment.payment_status === 'paid' && payment.invoice_number) {
+    // Payment is paid and has an invoice number assigned, but the PDF
+    // hasn't come back from the FastAPI service yet (fire-and-forget).
+    return (
+      <span title="Invoice generating…" className="flex h-7 w-7 items-center justify-center text-ink-muted">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      </span>
+    )
+  }
+  return null
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function PaymentsClient({ payments: initialPayments, members, collectedThisMonth, pendingDues }: Props) {
@@ -114,9 +142,26 @@ export default function PaymentsClient({ payments: initialPayments, members, col
       return
     }
 
-    setPayments(prev => [json.payment, ...prev])
+    setPayments(prev => [{ ...json.payment, invoice_pdf_url: json.payment.invoice_pdf_url ?? null }, ...prev])
     closeModal()
     setSaving(false)
+
+    // The invoice is generated server-side, fire-and-forget. Poll once
+    // after a few seconds to pick up the URL without a full page reload.
+    setTimeout(() => refreshInvoiceUrl(json.payment.id), 4000)
+  }
+
+  async function refreshInvoiceUrl(paymentId: string) {
+    try {
+      const res = await fetch(`/api/payments/${paymentId}`)
+      if (!res.ok) return
+      const json = await res.json()
+      if (json.payment?.invoice_pdf_url) {
+        setPayments(prev => prev.map(p => p.id === paymentId ? { ...p, invoice_pdf_url: json.payment.invoice_pdf_url } : p))
+      }
+    } catch {
+      // Silent — owner can still refresh the page manually
+    }
   }
 
   return (
@@ -239,11 +284,7 @@ export default function PaymentsClient({ payments: initialPayments, members, col
 
                     {/* Invoice link */}
                     <div className="hidden lg:block">
-                      {p.invoice_number && (
-                        <button className="rounded-lg p-1.5 text-ink-muted hover:text-brand hover:bg-brand-muted">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </button>
-                      )}
+                      <InvoiceAction payment={p} />
                     </div>
                   </li>
                 )

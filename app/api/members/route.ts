@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { triggerInvoiceGeneration } from '@/lib/invoice'
 
 export async function POST(request: NextRequest) {
   console.log('[POST /api/members] Called')
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: subError.message }, { status: 500 })
     }
 
-    console.log('[POST /api/members] Subscription created:', subscription.id, '→ expires', endDate)
+    console.log('[POST /api/members] Subscription created:', subscription.id, '-> expires', endDate)
 
     // Record payment if amount > 0
     if (amount_paid && Number(amount_paid) > 0) {
@@ -123,6 +124,7 @@ export async function POST(request: NextRequest) {
         // Non-fatal — member + sub created, just payment failed
       } else {
         console.log('[POST /api/members] Payment recorded:', payment.id)
+        triggerInvoiceGeneration(payment.id) // fire-and-forget
       }
     }
 
@@ -133,7 +135,7 @@ export async function POST(request: NextRequest) {
       .eq('id', member.id)
       .single()
 
-    console.log('[POST /api/members] Done ✅')
+    console.log('[POST /api/members] Done')
     return NextResponse.json({ member: memberWithSub ?? member }, { status: 201 })
 
   } catch (err) {

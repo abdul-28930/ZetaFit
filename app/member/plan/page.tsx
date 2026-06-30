@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import MemberLayout from '@/components/member-layout'
-import { Check, FileText, RefreshCw } from 'lucide-react'
+import { Check, FileText, RefreshCw, Download } from 'lucide-react'
 
 export default async function MemberPlanPage() {
   console.log('[MemberPlan] Rendering...')
@@ -20,11 +20,10 @@ export default async function MemberPlanPage() {
 
   const { data: payments } = await supabase
     .from('payments')
-    .select('id, total_amount, payment_method, paid_at, invoice_number, payment_status')
+    .select('id, total_amount, payment_method, paid_at, invoice_number, invoice_pdf_url, payment_status')
     .eq('member_id', member.id)
     .order('paid_at', { ascending: false })
 
-  // Get plan features
   const { data: planDetails } = await supabase
     .from('membership_plans')
     .select('features, description')
@@ -34,11 +33,11 @@ export default async function MemberPlanPage() {
   const features = Array.isArray(planDetails?.features) ? planDetails.features as string[] : []
 
   function formatINR(n: number) {
-    return '₹' + Math.round(n).toLocaleString('en-IN')
+    return '\u20B9' + Math.round(n).toLocaleString('en-IN')
   }
 
   function formatDate(d: string | null) {
-    if (!d) return '—'
+    if (!d) return '-'
     return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
@@ -54,11 +53,10 @@ export default async function MemberPlanPage() {
       <div className="px-4 py-3 space-y-4">
         <h2 className="text-lg font-bold text-ink">My plan</h2>
 
-        {/* Plan card */}
         <div className="rounded-2xl bg-brand p-5 text-white shadow-sm">
           <p className="text-sm opacity-80">Current plan</p>
           <p className="mt-1 text-3xl font-bold tracking-tight">
-            {member.plan_price ? formatINR(member.plan_price) : '—'}
+            {member.plan_price ? formatINR(member.plan_price) : '-'}
             <span className="text-base font-normal opacity-75"> / plan</span>
           </p>
           <span className="mt-1 inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold">
@@ -69,7 +67,7 @@ export default async function MemberPlanPage() {
             {[
               { label: 'Started', value: formatDate(member.start_date) },
               { label: 'Expires', value: formatDate(member.end_date) },
-              { label: 'Status', value: member.subscription_status === 'active' ? '✓ Active' : '✕ Inactive' },
+              { label: 'Status', value: member.subscription_status === 'active' ? 'Active' : 'Inactive' },
               { label: 'Days left', value: `${daysRemaining} days` },
             ].map(({ label, value }) => (
               <div key={label}>
@@ -79,7 +77,6 @@ export default async function MemberPlanPage() {
             ))}
           </div>
 
-          {/* Progress bar */}
           <div className="mt-4">
             <div className="mb-1 flex justify-between text-xs opacity-75">
               <span>Progress</span>
@@ -91,10 +88,9 @@ export default async function MemberPlanPage() {
           </div>
         </div>
 
-        {/* Features */}
         {features.length > 0 && (
           <div className="rounded-2xl border border-border bg-bg-card p-4 shadow-sm">
-            <p className="mb-3 text-sm font-semibold text-ink">What&apos;s included</p>
+            <p className="mb-3 text-sm font-semibold text-ink">What's included</p>
             <ul className="space-y-2.5">
               {features.map((f, i) => (
                 <li key={i} className="flex items-center gap-2.5 text-sm text-ink-secondary">
@@ -106,13 +102,11 @@ export default async function MemberPlanPage() {
           </div>
         )}
 
-        {/* Renew now CTA */}
         <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-3.5 text-sm font-bold text-white hover:bg-brand-hover shadow-sm">
           <RefreshCw className="h-4 w-4" /> Renew now
         </button>
         <p className="text-center text-xs text-ink-muted -mt-2">Contact the front desk to process your renewal</p>
 
-        {/* Payment history */}
         <div className="rounded-2xl border border-border bg-bg-card overflow-hidden shadow-sm">
           <div className="border-b border-border px-4 py-3">
             <p className="text-sm font-semibold text-ink">Payment history</p>
@@ -128,9 +122,23 @@ export default async function MemberPlanPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-ink">{formatINR(p.total_amount)}</p>
-                    <p className="text-xs text-ink-muted">{formatMethod(p.payment_method)} · {p.invoice_number}</p>
+                    <p className="text-xs text-ink-muted">{formatMethod(p.payment_method)} &middot; {p.invoice_number}</p>
                   </div>
-                  <span className="shrink-0 text-xs text-ink-muted">{formatDate(p.paid_at)}</span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="text-xs text-ink-muted">{formatDate(p.paid_at)}</span>
+                    {p.invoice_pdf_url ? (
+                      <a
+                        href={p.invoice_pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+                      >
+                        <Download className="h-3 w-3" /> Invoice
+                      </a>
+                    ) : p.payment_status === 'paid' ? (
+                      <span className="text-xs text-ink-muted">Generating&hellip;</span>
+                    ) : null}
+                  </div>
                 </li>
               ))}
             </ul>
