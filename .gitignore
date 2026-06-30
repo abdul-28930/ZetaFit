@@ -51,4 +51,7 @@ next-env.d.ts
 
 # Misc
 .cache/
-*.tgz
+*.tgz"backend/.env" 
+"backend/venv/" 
+"backend/__pycache__/" 
+"backend/**/__pycache__/" 

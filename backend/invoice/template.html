@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'DejaVu Sans', sans-serif;
+    font-size: 11px;
+    color: #1a1a1a;
+    margin: 0;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 3px solid #1D9E75;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+  }
+  .gym-name {
+    font-size: 22px;
+    font-weight: bold;
+    color: #1D9E75;
+    margin: 0;
+  }
+  .gym-meta {
+    font-size: 10px;
+    color: #555;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .invoice-title {
+    text-align: right;
+  }
+  .invoice-title h1 {
+    font-size: 20px;
+    margin: 0;
+    color: #1a1a1a;
+    letter-spacing: 1px;
+  }
+  .invoice-meta {
+    font-size: 10px;
+    color: #555;
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+  .invoice-meta strong {
+    color: #1a1a1a;
+  }
+  .bill-to {
+    margin-bottom: 22px;
+    padding: 12px 14px;
+    background: #F7F9F8;
+    border-radius: 6px;
+  }
+  .bill-to-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .bill-to-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1a1a1a;
+  }
+  .bill-to-detail {
+    font-size: 10px;
+    color: #555;
+    margin-top: 2px;
+  }
+  table.items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+  }
+  table.items th {
+    background: #1D9E75;
+    color: white;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 8px 10px;
+    text-align: left;
+  }
+  table.items th.right { text-align: right; }
+  table.items td {
+    padding: 10px;
+    border-bottom: 1px solid #E5E5E5;
+    font-size: 11px;
+  }
+  table.items td.right { text-align: right; }
+  table.items td.desc {
+    color: #1a1a1a;
+  }
+  table.items td.sub {
+    font-size: 9px;
+    color: #999;
+    margin-top: 2px;
+  }
+  .totals {
+    width: 280px;
+    margin-left: auto;
+    margin-bottom: 24px;
+  }
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 11px;
+    color: #555;
+  }
+  .totals-row.final {
+    border-top: 2px solid #1a1a1a;
+    margin-top: 4px;
+    padding-top: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #1a1a1a;
+  }
+  .totals-row .label { color: #555; }
+  .totals-row.final .label { color: #1a1a1a; }
+  .footer {
+    border-top: 1px solid #E5E5E5;
+    padding-top: 14px;
+    font-size: 9px;
+    color: #888;
+    line-height: 1.6;
+  }
+  .footer-grid {
+    display: flex;
+    justify-content: space-between;
+  }
+  .badge-paid {
+    display: inline-block;
+    background: #E1F5EE;
+    color: #0F6E56;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <p class="gym-name">{{ gym.name }}</p>
+      <div class="gym-meta">
+        {% if gym.address %}{{ gym.address }}{% if gym.city %}, {{ gym.city }}{% endif %}{% if gym.state %}, {{ gym.state }}{% endif %}{% if gym.pincode %} - {{ gym.pincode }}{% endif %}<br>{% endif %}
+        {% if gym.phone %}Phone: {{ gym.phone }}{% endif %}{% if gym.phone and gym.email %} &nbsp;|&nbsp; {% endif %}{% if gym.email %}{{ gym.email }}{% endif %}<br>
+        {% if gym.gst_number %}GSTIN: <strong>{{ gym.gst_number }}</strong>{% endif %}
+      </div>
+    </div>
+    <div class="invoice-title">
+      <h1>TAX INVOICE</h1>
+      <div class="invoice-meta">
+        Invoice No: <strong>{{ invoice_number }}</strong><br>
+        Date: <strong>{{ invoice_date }}</strong><br>
+        Payment: <strong>{{ payment_method }}</strong>
+      </div>
+      <span class="badge-paid">PAID</span>
+    </div>
+  </div>
+
+  <div class="bill-to">
+    <p class="bill-to-label">Bill To</p>
+    <p class="bill-to-name">{{ member.full_name }}</p>
+    {% if member.phone %}<p class="bill-to-detail">{{ member.phone }}</p>{% endif %}
+    {% if member.email %}<p class="bill-to-detail">{{ member.email }}</p>{% endif %}
+  </div>
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th style="width: 50%">Description</th>
+        <th style="width: 15%">HSN/SAC</th>
+        <th class="right" style="width: 12%">GST Rate</th>
+        <th class="right" style="width: 23%">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="desc">
+          {{ plan_name }} Membership
+          <div class="sub">{{ duration_label }}{% if subscription_period %} &middot; {{ subscription_period }}{% endif %}</div>
+        </td>
+        <td>999723</td>
+        <td class="right">{{ gst_rate }}%</td>
+        <td class="right">₹{{ base_amount }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="totals-row">
+      <span class="label">Subtotal</span>
+      <span>₹{{ base_amount }}</span>
+    </div>
+    {% if discount_amount and discount_amount != "0.00" %}
+    <div class="totals-row">
+      <span class="label">Discount</span>
+      <span>−₹{{ discount_amount }}</span>
+    </div>
+    {% endif %}
+    <div class="totals-row">
+      <span class="label">GST ({{ gst_rate }}%)</span>
+      <span>₹{{ gst_amount }}</span>
+    </div>
+    <div class="totals-row final">
+      <span class="label">Total Paid</span>
+      <span>₹{{ total_amount }}</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-grid">
+      <span>This is a system-generated invoice and does not require a signature.</span>
+      <span>Generated via ZetaFit</span>
+    </div>
+  </div>
+
+</body>
+</html>
