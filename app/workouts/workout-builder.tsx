@@ -313,7 +313,7 @@ export default function WorkoutBuilder({ exercises, members, savedTemplates: ini
                 </div>
               ) : (
                 items.map((item, idx) => (
-                  <div key={item.exercise_id} className="rounded-xl border border-border bg-bg-card p-4">
+                  <div key={`${item.exercise_id}-${idx}`} className="rounded-xl border border-border bg-bg-card p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-muted text-xs font-bold text-brand">{idx + 1}</span>
                       <div className="flex-1 min-w-0">
