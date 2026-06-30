@@ -13,7 +13,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get org
     const { data: profile } = await supabase
       .from('profiles')
       .select('organization_id')
@@ -35,7 +34,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name, phone and plan are required' }, { status: 400 })
     }
 
-    // Get plan details
     const { data: plan, error: planError } = await supabase
       .from('membership_plans')
       .select('id, duration_days, price, gst_rate, name')
@@ -50,7 +48,6 @@ export async function POST(request: NextRequest) {
 
     console.log('[POST /api/members] Plan:', plan.name, plan.duration_days, 'days')
 
-    // Create member
     const { data: member, error: memberError } = await supabase
       .from('members')
       .insert({
@@ -71,7 +68,6 @@ export async function POST(request: NextRequest) {
 
     console.log('[POST /api/members] Member created:', member.id)
 
-    // Create subscription
     const startDate = new Date().toISOString().split('T')[0]
     const endDate = new Date(Date.now() + plan.duration_days * 86400000).toISOString().split('T')[0]
 
@@ -95,7 +91,6 @@ export async function POST(request: NextRequest) {
 
     console.log('[POST /api/members] Subscription created:', subscription.id, '-> expires', endDate)
 
-    // Record payment if amount > 0
     if (amount_paid && Number(amount_paid) > 0) {
       const total = Number(amount_paid)
       const gstRate = plan.gst_rate ?? 18
@@ -121,14 +116,12 @@ export async function POST(request: NextRequest) {
 
       if (payError) {
         console.log('[POST /api/members] Payment insert error:', payError.message)
-        // Non-fatal — member + sub created, just payment failed
       } else {
         console.log('[POST /api/members] Payment recorded:', payment.id)
-        triggerInvoiceGeneration(payment.id) // fire-and-forget
+        triggerInvoiceGeneration(payment.id, orgId)
       }
     }
 
-    // Return member with subscription info for immediate UI update
     const { data: memberWithSub } = await supabase
       .from('members_with_subscription')
       .select('*')

@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
     if (!member_id || !amount) {
       return NextResponse.json({ error: 'Member and amount are required' }, { status: 400 })
     }
-    // Verify member belongs to this org
     const { data: member } = await supabase
       .from('members')
       .select('id, full_name')
@@ -63,7 +62,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: payError?.message ?? 'Failed to record payment' }, { status: 500 })
     }
     console.log('[POST /api/payments] Done Payment:', payment.id)
-    triggerInvoiceGeneration(payment.id) // fire-and-forget
+    triggerInvoiceGeneration(payment.id, orgId)
     return NextResponse.json({ payment }, { status: 201 })
   } catch (err) {
     console.error('[POST /api/payments] Unexpected error:', err)
